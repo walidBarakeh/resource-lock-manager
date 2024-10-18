@@ -18,7 +18,7 @@ export const dbConfig: { [key: string]: Knex.Config } = {
   test: {
     client: 'sqlite3',
     connection: {
-      filename: './mydbTest.sqlite',
+      filename: ':memory:',
     },
     debug,
     useNullAsDefault: true,

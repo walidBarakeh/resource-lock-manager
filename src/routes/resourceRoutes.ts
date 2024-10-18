@@ -13,15 +13,15 @@ export const ResourceRoute = (manager: ResourceLockManager) => {
             };
             await manager.addResourceLock(resourceId, startTime, endTime);
             res.status(ErrorCodes.Created).json({ message: 'Resource lock added' });
-          } catch (e) {
+        } catch (e) {
             next(e);
-          }
+        }
     });
 
     router.get('/isLocked', async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { resourceId, time } = req.query as unknown as {resourceId: string; time: number;};
-            const isLocked = await manager.isLockedAt(resourceId, time);
+            const { resourceId, time } = req.query as unknown as { resourceId: string; time: string; };
+            const isLocked = await manager.isLockedAt(resourceId, Number(time));
             res.status(ErrorCodes.Ok).json({ isLocked });
         } catch (e) {
             next(e);
@@ -32,7 +32,7 @@ export const ResourceRoute = (manager: ResourceLockManager) => {
         try {
             const { resourceId } = req.query as unknown as { resourceId: string };
             const collisions = await manager.findAllCollisions(resourceId);
-            res.status(ErrorCodes.Ok).json(collisions);
+            res.status(ErrorCodes.Ok).json({ collisions });
         } catch (e) {
             next(e);
         }
