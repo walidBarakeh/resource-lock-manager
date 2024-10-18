@@ -1,0 +1,8 @@
+{
+    "watch": ["src/**/*"],
+    "env": {
+      "ENV": "development",
+      "DEBUG": "true"
+    }
+  }
+  
