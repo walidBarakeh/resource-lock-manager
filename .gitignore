@@ -1,0 +1,18 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# SQLite database
+data/
+
+# Compiled files
+dist/
+
+mydbTest.sqlite
+
+mydb.sqlite
+
+.vscode

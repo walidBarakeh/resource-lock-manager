@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+      "module": "CommonJS",
+      "baseUrl": ".",
+      "target": "es2020",
+      "lib": ["es2020"],
+      "rootDir": "./src",
+      "outDir": "./dist",
+      "esModuleInterop": true,
+      "strict": true,
+      "skipLibCheck": true,
+      "noImplicitAny": false,
+      "sourceMap": true,
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "moduleResolution": "node",
+      "declaration": false,
+      "listFiles": false,
+      "resolveJsonModule": true,
+      "newLine": "LF",
+      "allowJs": true,
+      "allowSyntheticDefaultImports": true,
+      "noImplicitReturns": true,
+      "noFallthroughCasesInSwitch": true,
+      "forceConsistentCasingInFileNames": true,
+      "typeRoots": ["custom-typings", "./node_modules/@types"],
+  },
+  "include": ["src", "src/migrations"],
+  "exclude": ["node_modules", "dist"],
+  "compileOnSave": true,
+  "buildOnSave": true,
+  "atom": {
+      "rewriteTsconfig": false
+  }
+}
