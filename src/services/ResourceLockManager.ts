@@ -34,23 +34,25 @@ export class ResourceLockManager {
   public async findAllCollisions(resourceId: string): Promise<Array<[number, number]>> {
     const locks = await this.client(RESOURCE_TABLE_NAME)
       .where({ resource_id: resourceId })
-      .orderBy(['start_time', 'end_time']).select('start_time as startTime','end_time as endTime') as {startTime: number; endTime: number}[];
+      .orderBy(['start_time', 'end_time']).select('start_time as startTime', 'end_time as endTime') as { startTime: number; endTime: number }[];
 
+    if (locks.length < 2) {
+      return [];
+    }
     const collisions: Array<[number, number]> = [];
     let previousLock = locks[0];
     for (let i = 1; i < locks.length; i++) {
       const currentLock = locks[i];
-  
+
       if (this.overlaps([previousLock.startTime, previousLock.endTime], [currentLock.startTime, currentLock.endTime])) {
         collisions.push([
-          Math.max(previousLock.startTime, currentLock.startTime),
+          currentLock.startTime,
           Math.min(previousLock.endTime, currentLock.endTime),
         ]);
       }
-
       previousLock = currentLock;
     }
-    
+
     return collisions;
   }
 
