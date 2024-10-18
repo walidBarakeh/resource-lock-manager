@@ -15,17 +15,16 @@ export const IsAliveRoute = (manager: ResourceLockManager) => {
   return router;
 };
 
-
-
 const isAlive = async (manager: ResourceLockManager) => {
-
   const npmVersion = packageJson.version;
 
   let dbConnected = false;
   try {
     await manager.checkDbConnection();
     dbConnected = true;
-  } catch { }
+  } catch {
+    console.error('fail to connect to db');
+  }
 
   return {
     alive: dbConnected,
@@ -33,4 +32,4 @@ const isAlive = async (manager: ResourceLockManager) => {
     version: npmVersion,
     nodeVersion: process.version,
   };
-}
+};

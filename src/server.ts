@@ -15,7 +15,6 @@ export async function setupServer() {
     const manager = new ResourceLockManager(dbClient);
     const app = await initApp(manager);
     return { app, dbClient };
-
   } catch (error) {
     console.error('Error seeding the database:', error);
     process.exit(1);

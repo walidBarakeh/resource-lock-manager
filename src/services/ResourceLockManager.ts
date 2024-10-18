@@ -1,12 +1,11 @@
-import { Knex } from 'knex'
+import { Knex } from 'knex';
 import { ResourceLockDTO } from '../dto/ResourceLockDTO';
 import { TimeQueryDTO } from '../dto/TimeQueryDTO';
 import { validateOrReject } from 'class-validator';
 import { RESOURCE_TABLE_NAME } from '../config/consts';
 
 export class ResourceLockManager {
-  constructor(private readonly client: Knex) {
-  }
+  constructor(private readonly client: Knex) {}
   public async addResourceLock(resourceId: string, startTime: number, endTime: number): Promise<void> {
     const dto = new ResourceLockDTO(resourceId, startTime, endTime);
     await validateOrReject(dto);
@@ -32,9 +31,10 @@ export class ResourceLockManager {
   }
 
   public async findAllCollisions(resourceId: string): Promise<Array<[number, number]>> {
-    const locks = await this.client(RESOURCE_TABLE_NAME)
+    const locks = (await this.client(RESOURCE_TABLE_NAME)
       .where({ resource_id: resourceId })
-      .orderBy(['start_time', 'end_time']).select('start_time as startTime', 'end_time as endTime') as { startTime: number; endTime: number }[];
+      .orderBy(['start_time', 'end_time'])
+      .select('start_time as startTime', 'end_time as endTime')) as { startTime: number; endTime: number }[];
 
     if (locks.length < 2) {
       return [];
@@ -45,10 +45,7 @@ export class ResourceLockManager {
       const currentLock = locks[i];
 
       if (this.overlaps([previousLock.startTime, previousLock.endTime], [currentLock.startTime, currentLock.endTime])) {
-        collisions.push([
-          currentLock.startTime,
-          Math.min(previousLock.endTime, currentLock.endTime),
-        ]);
+        collisions.push([currentLock.startTime, Math.min(previousLock.endTime, currentLock.endTime)]);
       }
       previousLock = currentLock;
     }
@@ -62,6 +59,5 @@ export class ResourceLockManager {
 
   public async checkDbConnection(): Promise<void> {
     await this.client.raw('select 1+1 as result');
-  };
+  }
 }
-

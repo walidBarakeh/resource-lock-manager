@@ -33,6 +33,7 @@ describe('Resource Lock API Integration Tests', () => {
             .send({ resourceId: 1, startTime: 1500, endTime: 1600 });
 
         expect(response.status).toBe(400);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const errorMessage = JSON.parse((response.error as any)?.text);
         expect(errorMessage).toEqual({ error: { key: "resourceId", message: { isString: "resourceId must be a string" } } });
     });

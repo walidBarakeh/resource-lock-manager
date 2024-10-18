@@ -1,4 +1,4 @@
-  import { get } from 'env-var';
+import { get } from 'env-var';
 import { Knex } from 'knex';
 
 const debug = get('DEBUG').default('false').asBool();
