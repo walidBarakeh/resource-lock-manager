@@ -2,6 +2,7 @@ import { Knex } from 'knex'
 import { ResourceLockDTO } from '../dto/ResourceLockDTO';
 import { TimeQueryDTO } from '../dto/TimeQueryDTO';
 import { validateOrReject } from 'class-validator';
+import { RESOURCE_TABLE_NAME } from '../config/consts';
 
 export class ResourceLockManager {
   constructor(private readonly client: Knex) {
@@ -10,7 +11,7 @@ export class ResourceLockManager {
     const dto = new ResourceLockDTO(resourceId, startTime, endTime);
     await validateOrReject(dto);
 
-    await this.client('resource_locks').insert({
+    await this.client(RESOURCE_TABLE_NAME).insert({
       resource_id: resourceId,
       start_time: startTime,
       end_time: endTime,
@@ -21,7 +22,7 @@ export class ResourceLockManager {
     const dto = new TimeQueryDTO(resourceId, time);
     await validateOrReject(dto);
 
-    const lock = await this.client('resource_locks')
+    const lock = await this.client(RESOURCE_TABLE_NAME)
       .where({ resource_id: resourceId })
       .andWhere('start_time', '<=', time)
       .andWhere('end_time', '>', time)
@@ -31,21 +32,25 @@ export class ResourceLockManager {
   }
 
   public async findAllCollisions(resourceId: string): Promise<Array<[number, number]>> {
-    const locks = await this.client('resource_locks')
+    const locks = await this.client(RESOURCE_TABLE_NAME)
       .where({ resource_id: resourceId })
-      .orderBy('start_time', 'asc');
+      .orderBy(['start_time', 'end_time']).select('start_time as startTime','end_time as endTime') as {startTime: number; endTime: number}[];
 
     const collisions: Array<[number, number]> = [];
-    for (let i = 0; i < locks.length; i++) {
-      for (let j = i + 1; j < locks.length; j++) {
-        if (this.overlaps([locks[i].start_time, locks[i].end_time], [locks[j].start_time, locks[j].end_time])) {
-          collisions.push([
-            Math.max(locks[i].start_time, locks[j].start_time),
-            Math.min(locks[i].end_time, locks[j].end_time),
-          ]);
-        }
+    let previousLock = locks[0];
+    for (let i = 1; i < locks.length; i++) {
+      const currentLock = locks[i];
+  
+      if (this.overlaps([previousLock.startTime, previousLock.endTime], [currentLock.startTime, currentLock.endTime])) {
+        collisions.push([
+          Math.max(previousLock.startTime, currentLock.startTime),
+          Math.min(previousLock.endTime, currentLock.endTime),
+        ]);
       }
+
+      previousLock = currentLock;
     }
+    
     return collisions;
   }
 

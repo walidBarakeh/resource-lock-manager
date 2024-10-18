@@ -22,5 +22,5 @@ export enum ErrorCodes {
     }
   }
   
-  export const ATM_TABLE_NAME = 'atm_inventory';
+  export const RESOURCE_TABLE_NAME = 'resource_locks';
   
