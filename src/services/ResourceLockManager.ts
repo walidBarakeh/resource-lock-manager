@@ -19,7 +19,7 @@ export class ResourceLockManager {
 
   public async isLockedAt(resourceId: string, time: number): Promise<boolean> {
     const dto = new TimeQueryDTO(resourceId, time);
-    await validateOrReject(dto); // Validate the input
+    await validateOrReject(dto);
 
     const lock = await this.client('resource_locks')
       .where({ resource_id: resourceId })
