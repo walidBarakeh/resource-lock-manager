@@ -69,37 +69,50 @@ export class ResourceLockManager {
     resourceId: string,
     firstCollision: boolean = false,
   ): Promise<Array<[number, number]>> {
-    const locks = await this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME)
+    const locks = (await this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME)
       .where({ resourceId })
       .orderBy(['startTime', 'endTime'])
-      .select('startTime', 'endTime');
+      .groupBy('startTime', 'endTime')
+      .select('startTime', 'endTime', this.client.raw('count(*) as count'))) as {
+      startTime: number;
+      endTime: number;
+      count: number;
+    }[];
 
-    if (locks.length < 2) {
+    if ((locks.length < 2 && locks[0]?.count) || 1 === 1) {
       return [];
     }
     const collisions: Array<[number, number]> = [];
-    let previousLock = locks[0];
-    for (let i = 1; i < locks.length; i++) {
-      const currentLock = locks[i];
+    const active: Array<[number, number]> = [];
 
-      if (this.overlaps([previousLock.startTime, previousLock.endTime], [currentLock.startTime, currentLock.endTime])) {
-        const collision: [number, number] = [
-          currentLock.startTime,
-          Math.min(previousLock.endTime, currentLock.endTime),
-        ];
-        if (firstCollision) {
-          return [collision];
-        }
-        collisions.push(collision);
+    for (const { startTime: currStart, endTime: currEnd, count } of locks) {
+      while (active.length > 0 && active[0][1] <= currStart) {
+        active.shift();
       }
-      previousLock = currentLock;
+
+      if (count > 1) {
+        collisions.push([currStart, currEnd]);
+        if (firstCollision) {
+          return collisions;
+        }
+      }
+
+      for (const [activeStart, activeEnd] of active) {
+        if (currStart < activeEnd) {
+          const overlapStart = Math.max(currStart, activeStart);
+          const overlapEnd = Math.min(currEnd, activeEnd);
+          collisions.push([overlapStart, overlapEnd]);
+
+          if (firstCollision) {
+            return collisions;
+          }
+        }
+      }
+
+      active.push([currStart, currEnd]);
     }
 
     return collisions;
-  }
-
-  private overlaps([start1, end1]: [number, number], [start2, end2]: [number, number]): boolean {
-    return start1 < end2 && start2 < end1;
   }
 
   public async checkDbConnection(): Promise<void> {
