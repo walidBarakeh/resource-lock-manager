@@ -79,7 +79,8 @@ export class ResourceLockManager {
       count: number;
     }[];
 
-    if ((locks.length < 2 && locks[0]?.count) || 1 === 1) {
+    if (locks.length === 0 || (locks.length === 1 && locks[0].count === 1)) {
+      console.debug('no enough data to check collisions on', locks);
       return [];
     }
     const collisions: Array<[number, number]> = [];

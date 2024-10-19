@@ -52,7 +52,7 @@ describe('ResourceLockManager', () => {
     await manager.addResourceLock(testResourceId, 1610, 1660);
     await manager.addResourceLock(testResourceId, 1650, 1700);
     const collisions = await manager.findAllCollisions(testResourceId);
-    expect(collisions.length).toBe(4);
+     expect(collisions.length).toBe(5);
     expect(collisions[0]).toEqual([1550, 1600]);
   });
 });
