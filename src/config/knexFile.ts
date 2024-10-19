@@ -1,10 +1,11 @@
 import { get } from 'env-var';
 import { Knex } from 'knex';
+import knexStringcase from 'knex-stringcase';
 
 const debug = get('DEBUG').default('false').asBool();
 
 export const dbConfig: { [key: string]: Knex.Config } = {
-  development: {
+  development: knexStringcase({
     client: 'sqlite3',
     connection: {
       filename: './mydb.sqlite',
@@ -14,8 +15,8 @@ export const dbConfig: { [key: string]: Knex.Config } = {
     migrations: {
       directory: './src/migrations',
     },
-  },
-  test: {
+  }),
+  test: knexStringcase({
     client: 'sqlite3',
     connection: {
       filename: ':memory:',
@@ -25,5 +26,5 @@ export const dbConfig: { [key: string]: Knex.Config } = {
     migrations: {
       directory: './src/migrations',
     },
-  },
+  }),
 };

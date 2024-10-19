@@ -1,8 +1,13 @@
 import { Knex } from 'knex';
-import { ResourceLockDTO } from '../dto/ResourceLockDTO';
+import { ResourceLockDTO, ResourcesDto } from '../dto/ResourceLockDTO';
 import { TimeQueryDTO } from '../dto/TimeQueryDTO';
 import { validateOrReject } from 'class-validator';
 import { RESOURCE_TABLE_NAME } from '../config/consts';
+
+enum CollisionStatus {
+  Found = 'collision found',
+  NotFound = 'no collision',
+}
 
 export class ResourceLockManager {
   constructor(private readonly client: Knex) {}
@@ -10,31 +15,64 @@ export class ResourceLockManager {
     const dto = new ResourceLockDTO(resourceId, startTime, endTime);
     await validateOrReject(dto);
 
-    await this.client(RESOURCE_TABLE_NAME).insert({
-      resource_id: resourceId,
-      start_time: startTime,
-      end_time: endTime,
-    });
+    await this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME).insert(dto);
+  }
+
+  public async bulkInsert(resources: ResourceLockDTO[]): Promise<void> {
+
+    const dto = new ResourcesDto(resources);
+    await validateOrReject(dto);
+
+    await this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME).insert(resources);
   }
 
   public async isLockedAt(resourceId: string, time: number): Promise<boolean> {
+    const locks = await this.getLocksAt(resourceId, time);
+
+    return locks.length > 0;
+  }
+
+  public async isThereCollisionAt(resourceId: string, time: number): Promise<boolean> {
+    const locks = await this.getLocksAt(resourceId, time);
+
+    return locks.length > 1;
+  }
+
+  private async getLocksAt(resourceId: string, time: number): Promise<ResourceLockDTO[]> {
     const dto = new TimeQueryDTO(resourceId, time);
     await validateOrReject(dto);
 
-    const lock = await this.client(RESOURCE_TABLE_NAME)
-      .where({ resource_id: resourceId })
-      .andWhere('start_time', '<=', time)
-      .andWhere('end_time', '>', time)
-      .first();
-
-    return !!lock;
+    return this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME)
+      .where({ resourceId })
+      .andWhere('startTime', '<=', time)
+      .andWhere('endTime', '>', time)
+      .returning('*');
   }
 
-  public async findAllCollisions(resourceId: string): Promise<Array<[number, number]>> {
-    const locks = (await this.client(RESOURCE_TABLE_NAME)
-      .where({ resource_id: resourceId })
-      .orderBy(['start_time', 'end_time'])
-      .select('start_time as startTime', 'end_time as endTime')) as { startTime: number; endTime: number }[];
+  public async getResources(resourceId: string): Promise<ResourceLockDTO[]> {
+    return this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME)
+    .where({ resourceId })
+    .orderBy(['startTime', 'endTime'])
+    .select('startTime', 'endTime');
+  }
+
+  public async findCollision(resourceId: string): Promise<{ status: CollisionStatus; collision?: [number, number] }> {
+    const collisions = await this.findAllCollisions(resourceId, true);
+
+    if (collisions.length > 0) {
+      return { status: CollisionStatus.Found, collision: collisions[0] };
+    }
+    return { status: CollisionStatus.NotFound };
+  }
+
+  public async findAllCollisions(
+    resourceId: string,
+    firstCollision: boolean = false,
+  ): Promise<Array<[number, number]>> {
+    const locks = await this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME)
+      .where({ resourceId })
+      .orderBy(['startTime', 'endTime'])
+      .select('startTime', 'endTime');
 
     if (locks.length < 2) {
       return [];
@@ -45,7 +83,14 @@ export class ResourceLockManager {
       const currentLock = locks[i];
 
       if (this.overlaps([previousLock.startTime, previousLock.endTime], [currentLock.startTime, currentLock.endTime])) {
-        collisions.push([currentLock.startTime, Math.min(previousLock.endTime, currentLock.endTime)]);
+        const collision: [number, number] = [
+          currentLock.startTime,
+          Math.min(previousLock.endTime, currentLock.endTime),
+        ];
+        if (firstCollision) {
+          return [collision];
+        }
+        collisions.push(collision);
       }
       previousLock = currentLock;
     }
