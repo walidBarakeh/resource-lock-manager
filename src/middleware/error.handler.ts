@@ -11,7 +11,14 @@ export const handleErrorWithStatus = (error: any, _req: Request, res: Response, 
   } else if (Array.isArray(error) && error.length > 0) {
     const firstError = error[0];
     if (firstError instanceof ValidationError) {
-      res.status(ErrorCodes.BadRequest).json({ error: { key: firstError.property, message: firstError.constraints } });
+      res
+        .status(ErrorCodes.BadRequest)
+        .json({
+          error: {
+            key: firstError.property,
+            message: firstError.constraints || `invalid value of ${firstError.property}`,
+          },
+        });
     }
   } else {
     const response = {

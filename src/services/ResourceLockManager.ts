@@ -3,6 +3,7 @@ import { ResourceLockDTO, ResourcesDto } from '../dto/ResourceLockDTO';
 import { TimeQueryDTO } from '../dto/TimeQueryDTO';
 import { validateOrReject } from 'class-validator';
 import { RESOURCE_TABLE_NAME } from '../config/consts';
+import { plainToInstance } from 'class-transformer';
 
 enum CollisionStatus {
   Found = 'collision found',
@@ -19,9 +20,8 @@ export class ResourceLockManager {
   }
 
   public async bulkInsert(resources: ResourceLockDTO[]): Promise<void> {
-
-    const dto = new ResourcesDto(resources);
-    await validateOrReject(dto);
+    const resourcesDto = plainToInstance(ResourcesDto, { resources });
+    await validateOrReject(resourcesDto);
 
     await this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME).insert(resources);
   }
@@ -51,9 +51,9 @@ export class ResourceLockManager {
 
   public async getResources(resourceId: string): Promise<ResourceLockDTO[]> {
     return this.client<ResourceLockDTO>(RESOURCE_TABLE_NAME)
-    .where({ resourceId })
-    .orderBy(['startTime', 'endTime'])
-    .select('startTime', 'endTime');
+      .where({ resourceId })
+      .orderBy(['startTime', 'endTime'])
+      .select('startTime', 'endTime');
   }
 
   public async findCollision(resourceId: string): Promise<{ status: CollisionStatus; collision?: [number, number] }> {
