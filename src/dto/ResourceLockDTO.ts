@@ -25,7 +25,6 @@ export class ResourceLockDTO {
   endTime!: number;
 }
 
-
 export class ResourcesDto {
   constructor(resources: ResourceLockDTO[]) {
     this.resources = resources;
@@ -36,3 +35,19 @@ export class ResourcesDto {
   @Type(() => ResourceLockDTO)
   resources: ResourceLockDTO[];
 }
+
+export class ResourceLockArrayDTO {
+  constructor(resources: Resource[]) {
+    this.resources = resources;
+  }
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ResourceLockDTO)
+  resources!: ResourceLockDTO[];
+}
+
+type Resource = {
+  resourceId: string;
+  startTime: number;
+  endTime: number;
+};

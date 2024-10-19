@@ -61,8 +61,16 @@ npm run prettify
 
 POST /api/resources/lock: add resource.
 
+POST /api/resources/bulkLocks: add resources in bulk.
+
+GET /api/resources: get all locks of resource.
+
 GET /api/resources/isLocked: check if resource is locked in specific time.
 
-GET /api/resources/collisions: find collisions.
+GET /api/resources/isCollision: check if resource in collision in specific time.
+
+GET /api/resources/collisions: find collisions in resource.
+
+GET /api/resources/collision: find first collisions in resource.
 
 GET /is_alive: Server health check.
